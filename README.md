@@ -13,15 +13,19 @@ Utilizes [SigmAIQ](https://github.com/AttackIQ/SigmAIQ) - a wrapper for [pySigma
    - `data_model`: Data model queries with tstats
    - `stanza`: Enterprise Security savedsearches.conf stanza
 3. Pipelines
-   - Splunk Query, Windows Mappings `splunk_windows`
-   - Splunk Query, Sysmon Mappings `splunk_windows_sysmon_acc`
-   - Splunk Datamodel Field Mappings `splunk_cim_dm`
+   - `splunk_windows`: Splunk Query, Windows Mappings 
+   - `splunk_windows_sysmon_acc`: Splunk Query, Sysmon Mappings 
+   - `splunk_cim_dm`: Splunk Datamodel Field Mappings 
 
 ## Development
 Development done in python 3.12.4
 ### Install Packages
 Some packages might be preinstalled
+
 `pip install PyYAML`
+
 `pip install pysigma`
+
 `pip install sigma`
+
 `pip install sigmaiq`

@@ -8,6 +8,16 @@ from sigmaiq import SigmAIQBackend, SigmAIQPipelineResolver
 from sigma.collection import SigmaCollection, SigmaRule
 from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
 
+OUTPUT_FORMATS = ["default",
+                  "savedsearches",
+                  "data_model",
+                  "stanza"]
+
+PROC_PIPELINES = ["splunk_windows", 
+                  "splunk_windows_sysmon_acc",
+                  "splunk_cim_dm",
+                  "default"]
+
 app = typer.Typer()
 
 def get_files(directory):
@@ -28,46 +38,77 @@ def convert_rules(paths, backend):
     for file in paths:
         try:
             yml = safe_load(open(file))
-        except:
+        except Exception as e:
+            #print(e)
             print(f"Failed at opening file: {file}")
             continue
 
         try:
             rule = SigmaRule.from_dict(yml)
-        except Exception as e:
-            print(e)
+        except:
             print(f"Failed at processing yml file: {file}")
             continue
 
         try:
             rules.append(backend.translate(rule)[0])
         except SigmaFeatureNotSupportedByBackendError:
-            print(f"Failed at converting SIGMA to query: {file}")
+            print(f"Failed at converting SIGMA to query (likely a regex incompatibility in splunk): {file}")
             continue
 
     return rules
 
+def rule_source_callback(value: str):
+    if path.isdir(value):
+        return value
+    elif path.isdir(path.join(path.dirname(path.abspath(__file__)), value)):
+        return path.join(path.dirname(path.abspath(__file__)), value)
+    else:
+        raise typer.BadParameter(f"Path to rule source not found at {value}")
+
+def output_format_callback(value: str):
+    if value not in OUTPUT_FORMATS:
+        raise typer.BadParameter(f"Output format must be one of {OUTPUT_FORMATS}")
+    return value
+
+def output_file_callback(value: str):
+    if path.isfile(value) or path.isfile(path.join(path.dirname(path.abspath(__file__)), value)):
+        override = input(f"{value} already exists, override? (Y/n): ").lower()
+        match override:
+            case "y":
+                return value
+            case _:
+                raise typer.BadParameter(f"Provide a valid output file or location.")
+    else:
+        return value
+
 @app.command()
-def convert(rule_source: Annotated[Optional[str], typer.Option("--folder", "-f", help="")] = path.join(path.dirname(path.realpath(__file__)), "rules"), #source for SIGMA rules, defaults to current directory
-            output_format: Annotated[Optional[str], typer.Option("--outputformat", "-o", help="", show_default="Plain SPL queries")] = "default", 
-            pipeline: Annotated[Optional[str], typer.Option("--pipeline", "-p", help="")] = "default",
-            output_file: Annotated[Optional[str], typer.Option("--destination", "-d", help="")] = "rules.conf"):
+def convert(rule_source: Annotated[Optional[str], typer.Option("--folder", "-f", 
+                                                                help="Source directory where SIGMA rules to be converted are stored. Defaults to current directory\\rules folder")] = path.join(path.dirname(path.realpath(__file__)), "rules"),
+            output_format: Annotated[Optional[str], typer.Option("--outputformat", "-o", 
+                                                                help="", 
+                                                                show_default="Plain SPL queries", 
+                                                                callback=output_format_callback)] = "default", 
+            pipeline: Annotated[Optional[str], typer.Option("--pipeline", "-p", 
+                                                                help=f"One of {PROC_PIPELINES}. Defaults to {PROC_PIPELINES[0]} and {PROC_PIPELINES[1]} combined\nNote: 'splunk_cim_dm' may contain faulty fields")] = "default",
+            output_file: Annotated[Optional[str], typer.Option("--destination", "-d", 
+                                                                help="Default output to rules.conf, in current directory",
+                                                                callback=output_file_callback)] = "rules.conf"):
     
     print("\nConvert SIGMA rules to Splunk queries.")
     
 
     #resolving pipeline
     pipelines = ['splunk_windows','splunk_windows_sysmon_acc']
-    if pipeline == "default" or pipeline not in pipelines:
+    if pipeline == "default" or pipeline not in PROC_PIPELINES:
+        if pipeline not in PROC_PIPELINES:
+            print("Provided pipeline not found, using default.")
         pipeline = SigmAIQPipelineResolver(processing_pipelines=pipelines).process_pipelines(name="Splunk pipelines")
-    
-    
     # generate backend
     backend = SigmAIQBackend(backend="splunk",
                              processing_pipeline=pipeline,
                              output_format=output_format).create_backend()
 
-    #handling rule input
+    #digest rules from rule source location
     try:
         paths = parse_files(rule_source, path.isdir(rule_source))
     except FileNotFoundError:
@@ -76,28 +117,10 @@ def convert(rule_source: Annotated[Optional[str], typer.Option("--folder", "-f",
     
     output = convert_rules(paths, backend)
     
-    file_name = input("Enter name of output file (.conf): ") + ".conf"
-    """ 
-    if path.isfile(path.join(rule_source, output_file)):
-        print("True")
-        running = True
-        while running:
-            override = input(f"{file_name} already exists, override? (Y/n): ")
-            match override:
-                case "Y":
-                    with open(file_name, "w") as file:
-                        for item in output:
-                            file.write(item + "\n")
-                    running = False
-                case "n":
-                    continue
-                  
-            
-    else: """
-    with open(file_name, "w") as file:
+    with open(output_file, "w") as file:
         for item in output:
             file.write(item + "\n")
-    print(f"Output at: {path.join(getcwd(), file_name)}")
+    print(f"Output at: {path.join(getcwd(), output_file)}")
     
 
 if __name__ == "__main__":

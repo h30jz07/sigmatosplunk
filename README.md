@@ -1,5 +1,6 @@
 # Conversion tool from SIGMA Rules to Splunk queries
 Utilizes [SigmAIQ](https://github.com/AttackIQ/SigmAIQ) - a wrapper for [pySigma](https://github.com/SigmaHQ/pySigma)
+CLI development docs [Typer](https://typer.tiangolo.com/tutorial/options/callback-and-context/#validate-cli-parameters)
 ## Usage
 `cli here`
 ### Options

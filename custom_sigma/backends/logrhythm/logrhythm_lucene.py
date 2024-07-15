@@ -19,12 +19,12 @@ from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
 import sigma
 
 
-class LuceneBackend(TextQueryBackend):
+class LogRhythmBackend(TextQueryBackend):
     """
-    Elasticsearch query string backend. Generates query strings described here in the
-    Elasticsearch documentation:
+    Logrhythm query string backend. Generates query strings described here in the
+    logrhythm documentation:
 
-    https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax
+    <insert to logrhythm documenation>
     """
 
     # A descriptive name of the backend
@@ -63,21 +63,21 @@ class LuceneBackend(TextQueryBackend):
     # Character to escape particular parts defined in field_escape_pattern.
     field_escape: ClassVar[str] = "\\"
     # All matches of this pattern are prepended with the string contained in field_escape.
-    field_escape_pattern: ClassVar[Pattern] = re.compile("[\\\\s*]")
+    field_escape_pattern: ClassVar[Pattern] = re.compile("[\\s*]")
 
     # Values
     # string quoting character (added as escaping character)
     str_quote: ClassVar[str] = '"'
-    str_quote_pattern: ClassVar[Pattern] = re.compile(r"^$")
+    str_quote_pattern: ClassVar[Pattern] = re.compile(r"^.*\s.*$")
     str_quote_pattern_negation: ClassVar[bool] = False
     # Escaping character for special characrers inside string
-    escape_char: ClassVar[str] = ""
+    escape_char: ClassVar[str] = "\\"
     # Character used as multi-character wildcard
     wildcard_multi: ClassVar[str] = "*"
     # Character used as single-character wildcard
     wildcard_single: ClassVar[str] = "?"
     # Characters quoted in addition to wildcards and string quote
-    add_escaped: ClassVar[str] = r'+-=&|!(){}[]<>^"~*?:\/'
+    add_escaped: ClassVar[str] = '+-&&||!(){}[]^"~*?:\\'
     bool_values: ClassVar[Dict[bool, str]] = (
         {  # Values to which boolean values are mapped.
             True: "true",
@@ -189,14 +189,14 @@ class LuceneBackend(TextQueryBackend):
         self, cond: SigmaFieldReference, state: ConversionState
     ) -> Any:
         raise SigmaFeatureNotSupportedByBackendError(
-            "ES Lucene backend can't handle field references."
+            "LogRhythm backend can't handle field references."
         )
 
     def convert_condition_not(
         self, cond: ConditionNOT, state: ConversionState
     ) -> Union[str, DeferredQueryExpression]:
         """When checking if a field is not null, convert "NOT NOT _exists_:field" to "_exists_:field"."""
-        if LuceneBackend._is_field_null_condition(cond.args[0]):
+        if LogRhythmBackend._is_field_null_condition(cond.args[0]):
             return f"_exists_:{cond.args[0].field}"
 
         return super().convert_condition_not(cond, state)
@@ -235,13 +235,13 @@ class LuceneBackend(TextQueryBackend):
 
     def compare_precedence(self, outer: ConditionItem, inner: ConditionItem) -> bool:
         """Override precedence check for null field conditions."""
-        if isinstance(inner, ConditionNOT) and LuceneBackend._is_field_null_condition(
+        if isinstance(inner, ConditionNOT) and LogRhythmBackend._is_field_null_condition(
             inner.args[0]
         ):
             # inner will turn into "_exists_:field", no parentheses needed
             return True
 
-        if LuceneBackend._is_field_null_condition(inner):
+        if LogRhythmBackend._is_field_null_condition(inner):
             # inner will turn into "NOT _exists_:field", force parentheses
             return False
 

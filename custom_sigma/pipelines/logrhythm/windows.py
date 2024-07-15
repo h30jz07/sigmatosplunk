@@ -13,13 +13,13 @@ from sigma.processing.pipeline import ProcessingItem, ProcessingPipeline
 
 def lr_windows() -> ProcessingPipeline:
     return ProcessingPipeline(
-        name="LogRhythm Windows log mappings from Winlogbeat from version 7",
+        name="LogRhythm Windows log mappings",
         priority=20,
-        allowed_backends=("elasticsearch", "eql", "lucene", "opensearch"),
+        allowed_backends=("logrhythm"),
         items=generate_windows_logsource_items("winlog.channel", "{source}")
         + [
             ProcessingItem(  # Field mappings
-                identifier="ecs_windows_field_mapping",
+                identifier="lr_windows_field_mapping",
                 transformation=FieldMappingTransformation(
                     {
                         "EventID": "event.code",

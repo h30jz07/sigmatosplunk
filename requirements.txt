@@ -1,5 +1,4 @@
 PyYAML
-pysigma
-sigma
+pysigma >= 0.11.9
 sigmaiq
 typer

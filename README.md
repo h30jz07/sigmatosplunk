@@ -2,12 +2,22 @@
 This Python script converts SIGMA rules to queries for various SIEMs. It supports converting multiple SIGMA rule files (in YAML format) into corresponding queries based on specified backend and optional custom pipelines.
 
 ## Usage
-`cli here`
+Basic usage
+
+`python splunk_convert.py `
+- Uses default values for all options
+
+Specify SIGMA rules source folder
+
+`python splunk_convert.py -f *<folder path>*`
+`python splunk_convert.py --folder *C://Downloads/Sigma_Rules*`
+- Takes input for SIGMA rules from relative or absolute path
+
 ### Options
 1. File source
+   - (Default) Current folder
    - Folder path
    - File path
-   - (Default) Current folder
 2. Output Formats
    - (Default) Plain SPL queries
    - `savedsearches`: Plain SPL in a savedsearches.conf file
@@ -16,7 +26,8 @@ This Python script converts SIGMA rules to queries for various SIEMs. It support
 3. Backends
    - `opensearch` | `elasticsearch`: For LogRhythm and Lucene queries
    - `splunk`: Splunk SIEM
-The following may not produce working queries. Use with care
+
+   The following may not produce working queries. Use with care
    - `carbonblack`: "Carbon Black EDR"
    - `cortexxdr`: "Palo Alto Cortex XDR"
    - `crowdstrike_splunk`: "Crowdstrike Splunk Query"

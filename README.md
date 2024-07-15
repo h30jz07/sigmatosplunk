@@ -16,7 +16,7 @@ This Python script converts SIGMA rules to queries for various SIEMs. It support
 3. Backends
    - `opensearch` | `elasticsearch`: For LogRhythm and Lucene queries
    - `splunk`: Splunk SIEM
-   The following may not produce working queries. Use with care
+The following may not produce working queries. Use with care
    - `carbonblack`: "Carbon Black EDR"
    - `cortexxdr`: "Palo Alto Cortex XDR"
    - `crowdstrike_splunk`: "Crowdstrike Splunk Query"

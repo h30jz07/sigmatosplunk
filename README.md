@@ -6,12 +6,44 @@ Basic usage
 
 `python splunk_convert.py `
 - Uses default values for all options
+- Input SIGMA rules taken from *./rules*
 
 Specify SIGMA rules source folder
 
-`python splunk_convert.py -f *<folder path>*`
-`python splunk_convert.py --folder *C://Downloads/Sigma_Rules*`
-- Takes input for SIGMA rules from relative or absolute path
+`python splunk_convert.py -f <folder path>`
+
+`python splunk_convert.py --folder C://Downloads/Sigma_Rules`
+- Input folder for SIGMA rules from relative or absolute path
+
+Specify output format
+
+`python splunk_convert.py -o savedsearches`
+
+`python splunk_convert.py --outputformat data_model`
+- Change output format of the converted rules. Default for easy mass conversion. savedsearches for useful metadata
+
+Specify backend
+
+`python splunk_convert.py -b splunk`
+
+`python splunk_convert.py --backend opensearch`
+- The output rule language to convert a sigma rule into
+
+Specify pipeline
+
+`python splunk_convert.py -p splunk_windows`
+
+`python splunk_convert.py --pipeline splunk_cim_dm`
+- Pipeline for different mappings
+
+Specify destination
+
+`python splunk_convert.py -d <folder path>`
+
+`python splunk_convert.py --destination C://Downloads/Sigma_Rules`
+- Output folder for SIGMA rules to relative or absolute path
+
+
 
 ### Options
 1. File source

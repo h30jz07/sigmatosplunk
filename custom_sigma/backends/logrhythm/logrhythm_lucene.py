@@ -1,5 +1,4 @@
 import re
-import json
 from typing import Iterable, ClassVar, Dict, List, Optional, Pattern, Tuple, Union, Any
 
 from sigma.conversion.state import ConversionState
@@ -142,22 +141,22 @@ class LogRhythmBackend(TextQueryBackend):
             "sigma.processing.pipeline.ProcessingPipeline"
         ] = None,
         collect_errors: bool = False,
-        index_names: List = [
-            "apm-*-transaction*",
-            "auditbeat-*",
-            "endgame-*",
-            "filebeat-*",
-            "logs-*",
-            "packetbeat-*",
-            "traces-apm*",
-            "winlogbeat-*",
-            "-*elastic-cloud-logs-*",
-        ],
+        index_names: List = (
+                "apm-*-transaction*",
+                "auditbeat-*",
+                "endgame-*",
+                "filebeat-*",
+                "logs-*",
+                "packetbeat-*",
+                "traces-apm*",
+                "winlogbeat-*",
+                "-*elastic-cloud-logs-*",
+        ),
         schedule_interval: int = 5,
         schedule_interval_unit: str = "m",
         **kwargs,
     ):
-        super().__init__(processing_pipeline, collect_errors, **kwargs)
+        super().__init__(processing_pipeline, collect_errors)
         self.index_names = index_names or [
             "apm-*-transaction*",
             "auditbeat-*",
@@ -312,208 +311,3 @@ class LogRhythmBackend(TextQueryBackend):
 
         for tag in attack_tags:
             tags.remove(tag)
-
-    def finalize_query_dsl_lucene(
-        self, rule: SigmaRule, query: str, index: int, state: ConversionState
-    ) -> Dict:
-        return {
-            "query": {
-                "bool": {
-                    "must": [
-                        {"query_string": {"query": query, "analyze_wildcard": True}}
-                    ]
-                }
-            }
-        }
-
-    def finalize_output_dsl_lucene(self, queries: List[Dict]) -> Dict:
-        return list(queries)
-
-    def finalize_query_kibana_ndjson(
-        self, rule: SigmaRule, query: str, index: int, state: ConversionState
-    ) -> Dict:
-        # TODO: implement the per-query output for the output format kibana here. Usually, the
-        # generated query is embedded into a template, e.g. a JSON format with additional
-        # information from the Sigma rule.
-        columns = []
-        index = "beats-*"
-        ndjson = {
-            "id": str(rule.id),
-            "type": "search",
-            "attributes": {
-                "title": f"SIGMA - {rule.title}",
-                "description": rule.description,
-                "hits": 0,
-                "columns": columns,
-                "sort": ["@timestamp", "desc"],
-                "version": 1,
-                "kibanaSavedObjectMeta": {
-                    "searchSourceJSON": str(
-                        json.dumps(
-                            {
-                                "index": index,
-                                "filter": [],
-                                "highlight": {
-                                    "pre_tags": ["@kibana-highlighted-field@"],
-                                    "post_tags": ["@/kibana-highlighted-field@"],
-                                    "fields": {"*": {}},
-                                    "require_field_match": False,
-                                    "fragment_size": 2147483647,
-                                },
-                                "query": {
-                                    "query_string": {
-                                        "query": query,
-                                        "analyze_wildcard": True,
-                                    }
-                                },
-                            }
-                        )
-                    )
-                },
-            },
-            "references": [
-                {
-                    "id": index,
-                    "name": "kibanaSavedObjectMeta.searchSourceJSON.index",
-                    "type": "index-pattern",
-                }
-            ],
-        }
-        return ndjson
-
-    def finalize_output_kibana_ndjson(self, queries: List[str]) -> List[Dict]:
-        # TODO: implement the output finalization for all generated queries for the format kibana
-        # here. Usually, the single generated queries are embedded into a structure, e.g. some
-        # JSON or XML that can be imported into the SIEM.
-        return list(queries)
-
-    def finalize_query_siem_rule(
-        self, rule: SigmaRule, query: str, index: int, state: ConversionState
-    ) -> Dict:
-        """
-        Create SIEM Rules in JSON Format. These rules could be imported into Kibana using the
-        Create Rule API https://www.elastic.co/guide/en/kibana/8.6/create-rule-api.html
-        This API (and generated data) is NOT the same like importing Detection Rules via:
-        Kibana -> Security -> Alerts -> Manage Rules -> Import
-        If you want to have a nice importable NDJSON File for the Security Rule importer
-        use pySigma Format 'siem_rule_ndjson' instead.
-        """
-
-        siem_rule = {
-            "name": f"SIGMA - {rule.title}",
-            "consumer": "siem",
-            "enabled": True,
-            "throttle": None,
-            "schedule": {
-                "interval": f"{self.schedule_interval}{self.schedule_interval_unit}"
-            },
-            "params": {
-                "author": [rule.author] if rule.author is not None else [],
-                "description": (
-                    rule.description
-                    if rule.description is not None
-                    else "No description"
-                ),
-                "ruleId": str(rule.id),
-                "falsePositives": rule.falsepositives,
-                "from": f"now-{self.schedule_interval}{self.schedule_interval_unit}",
-                "immutable": False,
-                "license": "DRL",
-                "outputIndex": "",
-                "meta": {
-                    "from": "1m",
-                },
-                "maxSignals": 100,
-                "riskScore": (
-                    self.severity_risk_mapping[rule.level.name]
-                    if rule.level is not None
-                    else 21
-                ),
-                "riskScoreMapping": [],
-                "severity": (
-                    str(rule.level.name).lower() if rule.level is not None else "low"
-                ),
-                "severityMapping": [],
-                "threat": list(self.finalize_output_threat_model(rule.tags)),
-                "to": "now",
-                "references": rule.references,
-                "version": 1,
-                "exceptionsList": [],
-                "relatedIntegrations": [],
-                "requiredFields": [],
-                "setup": "",
-                "type": "query",
-                "language": "lucene",
-                "index": self.index_names,
-                "query": query,
-                "filters": [],
-            },
-            "rule_type_id": "siem.queryRule",
-            "tags": [f"{n.namespace}-{n.name}" for n in rule.tags],
-            "notify_when": "onActiveAlert",
-            "actions": [],
-        }
-        return siem_rule
-
-    def finalize_output_siem_rule(self, queries: List[Dict]) -> Dict:
-        return list(queries)
-
-    def finalize_query_siem_rule_ndjson(
-        self, rule: SigmaRule, query: str, index: int, state: ConversionState
-    ) -> Dict:
-        """
-        Generating SIEM/Detection Rules in NDJSON Format. Compatible with
-
-        https://www.elastic.co/guide/en/security/8.6/rules-ui-management.html#import-export-rules-ui
-        """
-
-        siem_rule = {
-            "id": str(rule.id),
-            "name": f"SIGMA - {rule.title}",
-            "enabled": True,
-            "throttle": "no_actions",
-            "interval": f"{self.schedule_interval}{self.schedule_interval_unit}",
-            "author": [rule.author] if rule.author is not None else [],
-            "description": (
-                rule.description if rule.description is not None else "No description"
-            ),
-            "rule_id": str(rule.id),
-            "false_positives": rule.falsepositives,
-            "from": f"now-{self.schedule_interval}{self.schedule_interval_unit}",
-            "immutable": False,
-            "license": "DRL",
-            "output_index": "",
-            "meta": {
-                "from": "1m",
-            },
-            "max_signals": 100,
-            "risk_score": (
-                self.severity_risk_mapping[rule.level.name]
-                if rule.level is not None
-                else 21
-            ),
-            "risk_score_mapping": [],
-            "severity": (
-                str(rule.level.name).lower() if rule.level is not None else "low"
-            ),
-            "severity_mapping": [],
-            "threat": list(self.finalize_output_threat_model(rule.tags)),
-            "tags": [f"{n.namespace}-{n.name}" for n in rule.tags],
-            "to": "now",
-            "references": rule.references,
-            "version": 1,
-            "exceptions_list": [],
-            "related_integrations": [],
-            "required_fields": [],
-            "setup": "",
-            "type": "query",
-            "language": "lucene",
-            "index": self.index_names,
-            "query": query,
-            "filters": [],
-            "actions": [],
-        }
-        return siem_rule
-
-    def finalize_output_siem_rule_ndjson(self, queries: List[Dict]) -> Dict:
-        return list(queries)

@@ -1,6 +1,7 @@
 import codecs
 from os import listdir, path, getcwd
-from yaml import safe_load
+from yaml import load, UnsafeLoader
+import yaml
 
 import typer
 from typing_extensions import Annotated, Optional
@@ -35,7 +36,7 @@ def convert_rules(paths, backend):
     rules = []
     for file in paths:
         try:
-            yml = safe_load(open(file))
+            yml = load(open(file, encoding='utf-8'), Loader=yaml.FullLoader)
             rule = SigmaRule.from_dict(yml)
 
             converted_rule = backend.convert_rule(rule)[0]
@@ -123,15 +124,14 @@ def convert(rule_source: Annotated[Optional[str], typer.Option("--folder", "-f",
         exit()
 
     output = convert_rules(paths, backend)
-    index = 1
-    for each in output:
-        print(f"{backend_name.capitalize()} query {index}. {each}")
-        index += 1
+    print(f"{len(output)} of {len(paths)} rules converted. {len(paths)-len(output)} failed")
 
-    with open(output_file, "w") as file:
-        for item in output:
-            file.write(item + "\n")
-
+    with open(output_file, "w", encoding="utf-8") as file:
+        try:
+            for item in output:
+                file.write(item + "\n")
+        except PermissionError:
+            print(f"Insufficient permissions to write in {output_file}.")
     print(f"Output at: {path.join(getcwd(), output_file)}")
 
 

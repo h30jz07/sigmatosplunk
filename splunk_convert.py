@@ -8,7 +8,7 @@ from typing_extensions import Annotated, Optional
 from sigmaiq import SigmAIQBackend, SigmAIQPipelineResolver, SigmAIQPipeline
 from sigma.rule import SigmaRule
 from sigma.collection import SigmaCollection
-from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
+from sigma.exceptions import SigmaFeatureNotSupportedByBackendError, SigmaTransformationError
 from custom_sigma.backends.logrhythm import logrhythm_lucene
 from custom_sigma.pipelines.logrhythm import windows
 
@@ -46,6 +46,9 @@ def convert_rules(paths, backend):
             continue
         except SigmaFeatureNotSupportedByBackendError:
             print(f"Failed at converting SIGMA to query: {file}")
+            continue
+        except SigmaTransformationError as e:
+            print(f"Rule contains field with no official conversion: {file}")
             continue
 
     return rules
@@ -120,12 +123,15 @@ def convert(rule_source: Annotated[Optional[str], typer.Option("--folder", "-f",
         exit()
 
     output = convert_rules(paths, backend)
+    index = 1
     for each in output:
-        print(each)
+        print(f"{backend_name.capitalize()} query {index}. {each}")
+        index += 1
 
     with open(output_file, "w") as file:
         for item in output:
             file.write(item + "\n")
+
     print(f"Output at: {path.join(getcwd(), output_file)}")
 
 

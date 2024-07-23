@@ -23,7 +23,7 @@ class LogRhythmBackend(TextQueryBackend):
     Logrhythm query string backend. Generates query strings described here in the
     logrhythm documentation:
 
-    <insert to logrhythm documenation>
+    <insert to logrhythm documentation>
     """
 
     # A descriptive name of the backend
@@ -67,7 +67,7 @@ class LogRhythmBackend(TextQueryBackend):
     # Values
     # string quoting character (added as escaping character)
     str_quote: ClassVar[str] = '"'
-    str_quote_pattern: ClassVar[Pattern] = re.compile(r"^.*\s.*$")
+    str_quote_pattern: ClassVar[Pattern] = re.compile(r"^$|.*\s.*")
     str_quote_pattern_negation: ClassVar[bool] = False
     # Escaping character for special characrers inside string
     escape_char: ClassVar[str] = "\\"

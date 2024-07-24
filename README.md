@@ -2,44 +2,43 @@
 This Python script converts SIGMA rules to queries for various SIEMs. It supports converting multiple SIGMA rule files (in YAML format) into corresponding queries based on specified backend and optional custom pipelines.
 
 ## Usage
-Basic usage
-
-`python splunk_convert.py `
+### 1. Basic usage
+`python splunk_convert.py`  
 - Uses default values for all options
-- Input SIGMA rules taken from *./rules*
+- Input SIGMA rules taken from takes relative path from current directory where the script is ran
 
-Specify SIGMA rules source folder
+Refer to table for default values  
+| Option      | Default Value  |
+| ----------- | ----------- |
+| Source folder (-f) | ./rules (relative to where CLI is run)|
+| Output format (-o) | default        |
+| Backend (-b) | splunk        |
+| Pipeline (-p)| splunk_windows + splunk_windows_sysmon_acc |
+| Output file (-d) | ./rules.conf |  
 
-`python splunk_convert.py -f <folder path>`
-
+### 2. Specify SIGMA rules source folder  
+`python splunk_convert.py -f <folder path>`  
 `python splunk_convert.py --folder C://Downloads/Sigma_Rules`
 - Input folder for SIGMA rules from relative or absolute path
 
-Specify output format
-
-`python splunk_convert.py -o savedsearches`
-
+### 3. Specify output format  
+`python splunk_convert.py -o savedsearches`  
 `python splunk_convert.py --outputformat data_model`
-- Change output format of the converted rules. Default for easy mass conversion. savedsearches for useful metadata
+- Change output format of the converted rules. Default for easy mass conversion.
+- For splunk, use savedsearches for useful metadata, default for only queries
 
-Specify backend
-
-`python splunk_convert.py -b splunk`
-
+### 4. Specify backend  
+`python splunk_convert.py -b splunk`  
 `python splunk_convert.py --backend opensearch`
 - The output rule language to convert a sigma rule into
 
-Specify pipeline
-
-`python splunk_convert.py -p splunk_windows`
-
+### 5. Specify pipeline  
+`python splunk_convert.py -p splunk_windows`  
 `python splunk_convert.py --pipeline splunk_cim_dm`
 - Pipeline for different mappings
 
-Specify destination
-
-`python splunk_convert.py -d <folder path>`
-
+### 6. Specify destination  
+`python splunk_convert.py -d <folder path>` 
 `python splunk_convert.py --destination C://Downloads/Sigma_Rules`
 - Output folder for SIGMA rules to relative or absolute path
 
@@ -56,8 +55,8 @@ Specify destination
    - `data_model`: Data model queries with tstats
    - `stanza`: Enterprise Security savedsearches.conf stanza
 3. Backends
-   - `opensearch` | `elasticsearch`: For LogRhythm and Lucene queries
-   - `splunk`: Splunk SIEM
+   - `LogRhythm`: For LogRhythm queries
+   - `splunk`: For Splunk queries
 
    The following may not produce working queries. Use with care
    - `carbonblack`: "Carbon Black EDR"
@@ -79,10 +78,11 @@ Specify destination
    - Folder path
 
 ## Development
-Utilizes [SigmAIQ](https://github.com/AttackIQ/SigmAIQ) - a wrapper for [pySigma](https://github.com/SigmaHQ/pySigma)
-CLI development docs [Typer](https://typer.tiangolo.com/tutorial/options/callback-and-context/#validate-cli-parameters)
+Utilizes [SigmAIQ](https://github.com/AttackIQ/SigmAIQ) - a wrapper for [pySigma](https://github.com/SigmaHQ/pySigma)  
+CLI development docs [Typer](https://typer.tiangolo.com/tutorial/options/callback-and-context/#validate-cli-parameters)  
+Development done in python 3.12.4  
+Refer to SigmAIQ and pySigma for more information about available backends, pipelines and output formats.
 
-Development done in python 3.12.4
 ### Install Packages
 Ensure you have Python installed, and install the required dependencies using `pip`
 Some packages might be preinstalled

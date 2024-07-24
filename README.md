@@ -4,10 +4,9 @@ This Python script converts SIGMA rules to queries for various SIEMs. It support
 ## Usage
 ### 1. Basic usage
 `python splunk_convert.py`  
-- Uses default values for all options
+- Uses default values for all options. Refer to table below for default values  
 - Input SIGMA rules taken from takes relative path from current directory where the script is ran
 
-Refer to table for default values  
 | Option      | Default Value  |
 | ----------- | ----------- |
 | Source folder (-f) | ./rules (relative to where CLI is run)|

@@ -6,9 +6,8 @@ import yaml
 import typer
 from typing_extensions import Annotated, Optional
 
-from sigmaiq import SigmAIQBackend, SigmAIQPipelineResolver, SigmAIQPipeline
+from sigmaiq import SigmAIQBackend, SigmAIQPipelineResolver
 from sigma.rule import SigmaRule
-from sigma.collection import SigmaCollection
 from sigma.exceptions import SigmaFeatureNotSupportedByBackendError, SigmaTransformationError
 from custom_sigma.backends.logrhythm import logrhythm_lucene
 from custom_sigma.pipelines.logrhythm import windows
@@ -99,8 +98,8 @@ def convert(rule_source: Annotated[Optional[str], typer.Option("--folder", "-f",
 
     # resolving pipeline
     if backend_name.lower() == "logrhythm":
-        # custom pipeline for lucene
-        pipeline = windows.lr_windows()
+        # custom pipeline for logrhythm
+        pipeline = windows.lr_windows_v2()
     elif pipeline_name:
         pipeline = SigmAIQPipelineResolver(processing_pipelines=pipeline_name.split()).process_pipelines()
     else:
